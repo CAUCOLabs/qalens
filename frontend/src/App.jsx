@@ -141,6 +141,42 @@ function App() {
               </section>
             </div>
 
+            <section className="test-case-section">
+              <div className="section-heading">
+                <div>
+                  <h2>Suggested Test Cases</h2>
+                  <p>Rule-based scenarios generated from the issue details</p>
+                </div>
+                <span>{result.test_cases?.length || 0}</span>
+              </div>
+
+              <div className="test-case-grid">
+                {result.test_cases?.map((testCase, index) => (
+                  <article className="test-case-card" key={`${testCase.title}-${index}`}>
+                    <div className="test-case-header">
+                      <h3>{testCase.title}</h3>
+                      <span>{testCase.priority}</span>
+                    </div>
+                    <p className="test-case-type">{testCase.type}</p>
+
+                    <div className="test-case-block">
+                      <strong>Steps</strong>
+                      <ol>
+                        {testCase.steps?.map((step, stepIndex) => (
+                          <li key={stepIndex}>{step}</li>
+                        ))}
+                      </ol>
+                    </div>
+
+                    <div className="test-case-block">
+                      <strong>Expected result</strong>
+                      <p>{testCase.expected_result}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+
             <section className="report-card">
               <div className="report-heading">
                 <h2>AI Report</h2>

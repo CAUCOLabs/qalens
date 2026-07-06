@@ -11,6 +11,7 @@ class JiraIssue(BaseModel):
     summary: str
     status: str
     issue_type: str
+    description: str | None = None
     priority: str | None = None
     assignee: str | None = None
     created: str | None = None

@@ -11,6 +11,7 @@ Analyze the issue from a QA perspective.
 Jira Issue:
 - Key: {issue.key}
 - Summary: {issue.summary}
+- Description: {issue.description}
 - Type: {issue.issue_type}
 - Status: {issue.status}
 - Priority: {issue.priority}
@@ -23,6 +24,7 @@ Rule-based analysis:
 - Risk level: {rule_analysis.get("risk_level")}
 - Risks: {rule_analysis.get("risks")}
 - Suggestions: {rule_analysis.get("suggestions")}
+- Suggested test cases: {rule_analysis.get("test_cases")}
 
 Return a concise QA analysis with:
 1. Overall QA assessment

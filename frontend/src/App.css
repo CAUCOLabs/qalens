@@ -257,6 +257,123 @@
   color: #38bdf8;
 }
 
+.test-case-section {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.62);
+  padding: 22px;
+  text-align: left;
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.section-heading p {
+  margin: 6px 0 0;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.section-heading > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.14);
+  color: #7dd3fc;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.test-case-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.test-case-card {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  background: rgba(2, 6, 23, 0.38);
+  padding: 18px;
+}
+
+.test-case-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.test-case-header h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.test-case-header span {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: rgba(56, 189, 248, 0.14);
+  color: #bae6fd;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.test-case-type {
+  margin: 0 0 14px;
+  color: #7dd3fc;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.test-case-block {
+  margin-top: 14px;
+}
+
+.test-case-block strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #cbd5e1;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.test-case-block ol {
+  margin: 0;
+  padding-left: 22px;
+  color: #dbe4ef;
+}
+
+.test-case-block li {
+  margin: 6px 0;
+  padding-left: 4px;
+  line-height: 1.5;
+}
+
+.test-case-block p {
+  margin: 0;
+  color: #dbe4ef;
+  line-height: 1.55;
+}
+
 .report-card {
   border-radius: 8px;
   background: #f8fafc;
@@ -327,13 +444,15 @@
 
   .search-card,
   .panel,
+  .test-case-section,
   .report-card {
     padding: 18px;
   }
 
   .search-row,
   .insight-grid,
-  .summary-grid {
+  .summary-grid,
+  .test-case-grid {
     grid-template-columns: 1fr;
   }
 
@@ -359,6 +478,7 @@
   }
 
   .panel-heading,
+  .section-heading,
   .report-heading {
     align-items: flex-start;
     flex-direction: column;
