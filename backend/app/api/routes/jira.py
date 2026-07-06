@@ -32,7 +32,7 @@ async def jira_issue(issue_key: str):
     return await service.get_issue(issue_key=issue_key)
 
 
-@router.get("/issue/{issue_key}/analyze", response_model=IssueAnalysisResponse)
+@router.get("/issue/{issue_key}/analyze")
 async def analyze_jira_issue(issue_key: str):
     jira_service = JiraService()
     analysis_service = AnalysisService()
