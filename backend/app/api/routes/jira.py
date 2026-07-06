@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 
 from app.schemas.analysis import IssueAnalysisResponse
 from app.schemas.jira import JiraConnectionStatus, JiraIssue, JiraIssuesResponse
@@ -38,5 +38,8 @@ async def analyze_jira_issue(issue_key: str):
     analysis_service = AnalysisService()
 
     issue = await jira_service.get_issue(issue_key=issue_key)
+
+    if isinstance(issue, dict) and issue.get("error"):
+        raise HTTPException(status_code=400, detail=issue["error"])
 
     return analysis_service.analyze_issue(issue)
