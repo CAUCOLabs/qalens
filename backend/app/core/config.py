@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     jira_redirect_uri: str | None = None
 
     openai_api_key: str | None = None
+    openai_model: str = "gpt-5.5"
 
     model_config = SettingsConfigDict(
         env_file=".env",

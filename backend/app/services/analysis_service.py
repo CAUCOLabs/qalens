@@ -1,9 +1,11 @@
 from app.schemas.analysis import IssueAnalysisResponse
 from app.schemas.jira import JiraIssue
+from app.services.llm_service import LLMService
+from app.services.prompt_builder import PromptBuilder
 
 
 class AnalysisService:
-    def analyze_issue(self, issue: JiraIssue) -> IssueAnalysisResponse:
+    def analyze_issue_rules(self, issue: JiraIssue) -> IssueAnalysisResponse:
         risks: list[str] = []
         suggestions: list[str] = []
         score = 100
@@ -28,11 +30,6 @@ class AnalysisService:
             suggestions.append("Add clear acceptance criteria before QA starts.")
             score -= 20
 
-        if issue.status.lower() in ["done", "hecho"] and not issue.assignee:
-            risks.append("Issue is done but has no assignee.")
-            suggestions.append("Verify ownership and completion evidence.")
-            score -= 10
-
         score = max(score, 0)
 
         if score >= 80:
@@ -49,3 +46,22 @@ class AnalysisService:
             risks=risks,
             suggestions=suggestions,
         )
+
+    def analyze_issue(self, issue: JiraIssue) -> dict:
+        rule_analysis = self.analyze_issue_rules(issue)
+
+        prompt = PromptBuilder().build_issue_analysis_prompt(
+            issue=issue,
+            rule_analysis=rule_analysis.model_dump(),
+        )
+
+        ai_report = LLMService().generate_text(prompt)
+
+        return {
+            "issue_key": issue.key,
+            "quality_score": rule_analysis.quality_score,
+            "risk_level": rule_analysis.risk_level,
+            "risks": rule_analysis.risks,
+            "suggestions": rule_analysis.suggestions,
+            "ai_report": ai_report,
+        }
