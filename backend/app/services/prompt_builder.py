@@ -6,7 +6,21 @@ class PromptBuilder:
         return f"""
 You are a senior QA analyst reviewing a Jira issue.
 
-Analyze the issue from a QA perspective.
+You MUST return ONLY valid JSON.
+Do not use Markdown.
+Do not use headings.
+Do not wrap the response in ```json.
+Do not include any text before or after the JSON.
+
+Use exactly this JSON structure:
+
+{{
+  "overall_assessment": "string",
+  "main_risks": ["string"],
+  "missing_information": ["string"],
+  "suggested_test_cases": ["string"],
+  "recommended_next_actions": ["string"]
+}}
 
 Jira Issue:
 - Key: {issue.key}
@@ -25,11 +39,4 @@ Rule-based analysis:
 - Risks: {rule_analysis.get("risks")}
 - Suggestions: {rule_analysis.get("suggestions")}
 - Suggested test cases: {rule_analysis.get("test_cases")}
-
-Return a concise QA analysis with:
-1. Overall QA assessment
-2. Main risks
-3. Missing information
-4. Suggested test cases
-5. Recommended next actions
 """

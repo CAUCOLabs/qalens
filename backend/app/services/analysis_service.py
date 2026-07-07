@@ -268,12 +268,18 @@ class AnalysisService:
         )
 
         try:
-            ai_report = LLMService().generate_text(prompt)
+            ai_analysis = LLMService().generate_json(prompt)
         except Exception as exc:
-            ai_report = (
-                "AI report unavailable. "
-                f"Rule-based analysis completed successfully. Reason: {exc}"
-            )
+            ai_analysis = {
+                "overall_assessment": (
+                    "AI analysis unavailable. "
+                    f"Rule-based analysis completed successfully. Reason: {exc}"
+                ),
+                "main_risks": [],
+                "missing_information": [],
+                "suggested_test_cases": [],
+                "recommended_next_actions": [],
+            }
 
         return {
             "issue_key": issue.key,
@@ -284,5 +290,5 @@ class AnalysisService:
             "test_cases": [
                 test_case.model_dump() for test_case in rule_analysis.test_cases
             ],
-            "ai_report": ai_report,
+            "ai_analysis": ai_analysis,
         }
