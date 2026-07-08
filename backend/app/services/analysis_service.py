@@ -398,3 +398,85 @@ class AnalysisService:
             ],
             "ai_analysis": ai_analysis,
         }
+
+    def analyze_project(self, project_key: str, issues: list[JiraIssue]) -> dict:
+        analyzed_issues = [self.analyze_issue_rules(issue) for issue in issues]
+
+        total = len(analyzed_issues)
+
+        if total == 0:
+            return {
+                "project_key": project_key,
+                "total_issues": 0,
+                "average_quality_score": 0,
+                "overall_risk_level": "UNKNOWN",
+                "quality_gate": "NO_DATA",
+                "summary": "No issues found for this project.",
+                "risk_distribution": {},
+                "trust_readiness_distribution": {},
+                "blocked_issues": [],
+                "top_risks": [],
+            }
+
+        average_score = round(
+            sum(issue.quality_score for issue in analyzed_issues) / total
+        )
+
+        risk_distribution = {
+            "LOW": sum(1 for issue in analyzed_issues if issue.risk_level == "LOW"),
+            "MEDIUM": sum(1 for issue in analyzed_issues if issue.risk_level == "MEDIUM"),
+            "HIGH": sum(1 for issue in analyzed_issues if issue.risk_level == "HIGH"),
+        }
+
+        trust_readiness_distribution = {
+            "HIGH": sum(1 for issue in analyzed_issues if issue.trust_readiness == "HIGH"),
+            "MEDIUM": sum(1 for issue in analyzed_issues if issue.trust_readiness == "MEDIUM"),
+            "LOW": sum(1 for issue in analyzed_issues if issue.trust_readiness == "LOW"),
+        }
+
+        blocked_issues = [
+            {
+                "issue_key": issue.issue_key,
+                "quality_score": issue.quality_score,
+                "risk_level": issue.risk_level,
+                "quality_gate": issue.quality_gate,
+                "trust_readiness": issue.trust_readiness,
+                "risks": issue.risks,
+            }
+            for issue in analyzed_issues
+            if issue.quality_gate == "BLOCKED_UNTIL_CLARIFIED"
+        ]
+
+        top_risks: list[str] = []
+        for issue in analyzed_issues:
+            top_risks.extend(issue.risks)
+
+        unique_top_risks = list(dict.fromkeys(top_risks))[:10]
+
+        if risk_distribution["HIGH"] > 0 or trust_readiness_distribution["LOW"] > 0:
+            overall_risk_level = "HIGH"
+            project_quality_gate = "BLOCKED_UNTIL_CLARIFIED"
+        elif risk_distribution["MEDIUM"] > 0 or trust_readiness_distribution["MEDIUM"] > 0:
+            overall_risk_level = "MEDIUM"
+            project_quality_gate = "REVIEW_REQUIRED"
+        else:
+            overall_risk_level = "LOW"
+            project_quality_gate = "READY_FOR_QA"
+
+        return {
+            "project_key": project_key,
+            "total_issues": total,
+            "average_quality_score": average_score,
+            "overall_risk_level": overall_risk_level,
+            "quality_gate": project_quality_gate,
+            "summary": (
+                f"Project {project_key} has {total} analyzed issues with an "
+                f"average quality score of {average_score}. "
+                f"Overall risk level is {overall_risk_level}."
+            ),
+            "risk_distribution": risk_distribution,
+            "trust_readiness_distribution": trust_readiness_distribution,
+            "blocked_issues": blocked_issues,
+            "top_risks": unique_top_risks,
+        }
+

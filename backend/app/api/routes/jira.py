@@ -43,3 +43,19 @@ async def analyze_jira_issue(issue_key: str):
         raise HTTPException(status_code=400, detail=issue["error"])
 
     return analysis_service.analyze_issue(issue)
+
+
+@router.get("/project/{project_key}/analyze")
+async def analyze_jira_project(project_key: str):
+    jira_service = JiraService()
+    analysis_service = AnalysisService()
+
+    issues_response = await jira_service.get_issues(project_key=project_key)
+
+    if isinstance(issues_response, dict) and issues_response.get("error"):
+        raise HTTPException(status_code=400, detail=issues_response["error"])
+
+    return analysis_service.analyze_project(
+        project_key=project_key,
+        issues=issues_response.issues,
+    )
