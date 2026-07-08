@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from typing import Any
 
-from app.schemas.analysis import IssueAnalysisResponse, TestCaseSuggestion
+from app.schemas.analysis import IssueAnalysisResponse, TestCaseSuggestion, TrustSignal
 from app.schemas.jira import JiraIssue
 from app.services.llm_service import LLMService
 from app.services.prompt_builder import PromptBuilder
@@ -67,6 +67,87 @@ class AnalysisService:
         return "acceptance criteria" in issue_text or (
             "given" in issue_text and "when" in issue_text
         )
+
+    def _assess_requirement_quality(self, issue: JiraIssue) -> str:
+        if not issue.summary or len(issue.summary.strip()) < 10:
+            return "WEAK"
+        if not issue.description or len(issue.description.strip()) < 40:
+            return "PARTIAL"
+        return "STRONG"
+
+    def _assess_acceptance_criteria_readiness(self, issue: JiraIssue) -> str:
+        if issue.issue_type.lower() not in ["story", "feature"]:
+            return "NOT_APPLICABLE"
+        return "READY" if self._has_acceptance_criteria(issue) else "MISSING"
+
+    def _assess_test_coverage_readiness(self, issue: JiraIssue) -> str:
+        if not issue.summary or not issue.description:
+            return "LOW"
+        if not issue.priority or not issue.assignee:
+            return "MEDIUM"
+        return "HIGH"
+
+    def _assess_evidence_readiness(self, issue: JiraIssue) -> str:
+        if not issue.description or len(issue.description.strip()) < 40:
+            return "INCOMPLETE"
+        if not self._has_acceptance_criteria(issue) and issue.issue_type.lower() in ["story", "feature"]:
+            return "PARTIAL"
+        return "READY"
+
+    def _detect_trust_signals(self, issue: JiraIssue) -> list[TrustSignal]:
+        issue_text = f"{issue.summary} {issue.description or ''}".lower()
+        signals: list[TrustSignal] = []
+
+        sensitive_terms = [
+            "payment", "payments", "bank", "account", "customer", "kyc",
+            "aml", "asset", "wallet", "crypto", "token", "approval",
+            "identity", "authentication", "authorization", "gdpr",
+            "personal data", "ai", "agent", "audit", "compliance",
+        ]
+
+        for term in sensitive_terms:
+            if term in issue_text:
+                signals.append(
+                    TrustSignal(
+                        category="regulated_or_sensitive_functionality",
+                        signal=f"Potential trust-sensitive term detected: {term}",
+                        severity="MEDIUM",
+                    )
+                )
+
+        if not issue.description or len(issue.description.strip()) < 40:
+            signals.append(
+                TrustSignal(
+                    category="evidence_readiness",
+                    signal="Issue lacks enough description to support evidence-ready QA.",
+                    severity="HIGH",
+                )
+            )
+
+        if issue.issue_type.lower() in ["story", "feature"] and not self._has_acceptance_criteria(issue):
+            signals.append(
+                TrustSignal(
+                    category="requirement_quality",
+                    signal="Story or feature may be missing acceptance criteria.",
+                    severity="HIGH",
+                )
+            )
+
+        return signals
+
+    def _assess_trust_readiness(self, issue: JiraIssue, trust_signals: list[TrustSignal]) -> str:
+        if any(signal.severity == "HIGH" for signal in trust_signals):
+            return "LOW"
+        if trust_signals:
+            return "MEDIUM"
+        return "HIGH"
+
+    def _quality_gate(self, risk_level: str, trust_readiness: str, evidence_readiness: str) -> str:
+        if risk_level == "HIGH" or trust_readiness == "LOW" or evidence_readiness == "INCOMPLETE":
+            return "BLOCKED_UNTIL_CLARIFIED"
+        if risk_level == "MEDIUM" or trust_readiness == "MEDIUM" or evidence_readiness == "PARTIAL":
+            return "REVIEW_REQUIRED"
+        return "READY_FOR_QA"
 
     def _generate_test_cases(self, issue: JiraIssue) -> list[TestCaseSuggestion]:
         test_cases: list[TestCaseSuggestion] = [
@@ -249,13 +330,29 @@ class AnalysisService:
         else:
             risk_level = "HIGH"
 
+        test_cases = self._generate_test_cases(issue)
+        trust_signals = self._detect_trust_signals(issue)
+        requirement_quality = self._assess_requirement_quality(issue)
+        acceptance_criteria_readiness = self._assess_acceptance_criteria_readiness(issue)
+        test_coverage_readiness = self._assess_test_coverage_readiness(issue)
+        evidence_readiness = self._assess_evidence_readiness(issue)
+        trust_readiness = self._assess_trust_readiness(issue, trust_signals)
+        quality_gate = self._quality_gate(risk_level, trust_readiness, evidence_readiness)
+
         return IssueAnalysisResponse(
             issue_key=issue.key,
             quality_score=score,
             risk_level=risk_level,
             risks=risks,
             suggestions=suggestions,
-            test_cases=self._generate_test_cases(issue),
+            test_cases=test_cases,
+            requirement_quality=requirement_quality,
+            acceptance_criteria_readiness=acceptance_criteria_readiness,
+            test_coverage_readiness=test_coverage_readiness,
+            evidence_readiness=evidence_readiness,
+            trust_readiness=trust_readiness,
+            quality_gate=quality_gate,
+            trust_signals=trust_signals,
         )
 
     def analyze_issue(self, issue: JiraIssue | Mapping[str, Any] | Any) -> dict:
@@ -289,6 +386,15 @@ class AnalysisService:
             "suggestions": rule_analysis.suggestions,
             "test_cases": [
                 test_case.model_dump() for test_case in rule_analysis.test_cases
+            ],
+            "requirement_quality": rule_analysis.requirement_quality,
+            "acceptance_criteria_readiness": rule_analysis.acceptance_criteria_readiness,
+            "test_coverage_readiness": rule_analysis.test_coverage_readiness,
+            "evidence_readiness": rule_analysis.evidence_readiness,
+            "trust_readiness": rule_analysis.trust_readiness,
+            "quality_gate": rule_analysis.quality_gate,
+            "trust_signals": [
+                signal.model_dump() for signal in rule_analysis.trust_signals
             ],
             "ai_analysis": ai_analysis,
         }
