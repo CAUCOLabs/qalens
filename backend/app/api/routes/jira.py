@@ -4,6 +4,7 @@ from app.schemas.analysis import IssueAnalysisResponse
 from app.schemas.jira import JiraConnectionStatus, JiraIssue, JiraIssuesResponse
 from app.services.analysis_service import AnalysisService
 from app.services.jira_service import JiraService
+from app.services.traceability_service import TraceabilityService
 
 router = APIRouter(prefix="/jira", tags=["Jira"])
 
@@ -59,3 +60,17 @@ async def analyze_jira_project(project_key: str):
         project_key=project_key,
         issues=issues_response.issues,
     )
+
+
+@router.get("/issue/{issue_key}/traceability")
+async def analyze_issue_traceability(issue_key: str):
+    jira_service = JiraService()
+    traceability_service = TraceabilityService()
+
+    raw_issue = await jira_service.get_raw_issue(issue_key=issue_key)
+
+    if isinstance(raw_issue, dict) and raw_issue.get("error"):
+        raise HTTPException(status_code=400, detail=raw_issue["error"])
+
+    return traceability_service.analyze_issue_traceability(raw_issue)
+

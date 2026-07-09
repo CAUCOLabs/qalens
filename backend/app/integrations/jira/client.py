@@ -46,7 +46,7 @@ class JiraClient:
 
     async def get_issue(self, issue_key: str) -> dict:
         params = {
-            "fields": "summary,status,issuetype,priority,assignee,created,updated,description",
+            "fields": "summary,status,issuetype,priority,assignee,created,updated,description,parent,subtasks,issuelinks",
         }
 
         async with httpx.AsyncClient(timeout=20) as client:

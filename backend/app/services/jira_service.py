@@ -141,3 +141,12 @@ class JiraService:
 
         data = await client.get_issue(issue_key=issue_key)
         return self._normalize_issue(data)
+
+    async def get_raw_issue(self, issue_key: str) -> dict:
+        client = self._get_client()
+
+        if not client:
+            return {"error": "Jira is not connected. Visit /jira/oauth/login first."}
+
+        return await client.get_issue(issue_key=issue_key)
+
