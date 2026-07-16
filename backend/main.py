@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 
+from app.api.routes.evidence_intelligence import router as evidence_intelligence_router
+
 from app.api.routes.quality_intelligence import router as quality_intelligence_router
 
 from app.api.routes.change_intelligence import router as change_intelligence_router
@@ -32,3 +34,4 @@ app.include_router(jira_router)
 app.include_router(oauth_router)
 app.include_router(change_intelligence_router)
 app.include_router(quality_intelligence_router)
+app.include_router(evidence_intelligence_router)
